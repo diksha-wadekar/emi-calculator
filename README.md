@@ -26,7 +26,7 @@ Where:
 1. Clone the repo
 2. Open `index.html` in any browser
    or
-3. View the live demo: [Live Demo](your-github-pages-link)
+3. View the live demo: [Live Demo](https://diksha-wadekar.github.io/emi-calculator/)
 
 ## Screenshot
 ![EMI Calculator](screenshot.png)
