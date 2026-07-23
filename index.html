@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMI Calculator — Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B3B2E;
+    --ink-deep:#082B21;
+    --paper:#F7F3E8;
+    --paper-line:#E7DEC7;
+    --gold:#D4A544;
+    --gold-bright:#F0C868;
+    --teal:#1F6F5C;
+    --coral:#C1483A;
+    --ink-soft:rgba(247,243,232,0.65);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(212,165,68,0.10), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(31,111,92,0.25), transparent 50%),
+      var(--ink);
+    font-family:'Inter', sans-serif;
+    color:var(--paper);
+    padding:32px 16px 64px;
+    display:flex;
+    justify-content:center;
+  }
+  .wrap{ width:100%; max-width:980px; }
+  header{ text-align:center; margin-bottom:36px; }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:.28em;
+    font-size:11px;
+    color:var(--gold-bright);
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'DM Serif Display', serif;
+    font-style:italic;
+    font-size:clamp(32px,5vw,52px);
+    margin:0;
+    color:var(--paper);
+  }
+  header p{ color:var(--ink-soft); margin-top:10px; font-size:15px; }
+
+  .board{
+    display:grid;
+    grid-template-columns:1.1fr 1fr;
+    gap:0;
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 30px 70px rgba(0,0,0,0.45);
+    border:1px solid var(--paper-line);
+  }
+  @media (max-width:760px){ .board{ grid-template-columns:1fr; } }
+
+  .ledger-side{ padding:36px 34px; border-right:1px dashed var(--paper-line); }
+  @media (max-width:760px){ .ledger-side{ border-right:none; border-bottom:1px dashed var(--paper-line); } }
+
+  .field{ margin-bottom:24px; }
+  label{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--teal); margin-bottom:8px; font-weight:700;
+  }
+  label span.val{ color:var(--ink); font-size:14px; font-weight:700; }
+
+  input[type=range]{
+    width:100%; height:6px; border-radius:4px;
+    background:var(--paper-line); appearance:none; -webkit-appearance:none;
+    outline:none; margin-bottom:10px;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:20px; height:20px; border-radius:50%;
+    background:var(--gold); border:3px solid var(--ink); cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:20px; height:20px; border-radius:50%;
+    background:var(--gold); border:3px solid var(--ink); cursor:pointer;
+  }
+  .numrow{ display:flex; align-items:center; gap:10px; }
+  input[type=number]{
+    flex:1; font-family:'JetBrains Mono', monospace; font-size:16px; font-weight:700;
+    padding:10px 12px; border-radius:8px; border:1.5px solid var(--paper-line);
+    background:#fff; color:var(--ink); width:100%;
+  }
+  input[type=number]:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
+
+  .toggle{ display:flex; gap:6px; }
+  .toggle button{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.05em;
+    padding:7px 12px; border-radius:20px; border:1.5px solid var(--teal);
+    background:transparent; color:var(--teal); cursor:pointer; font-weight:700;
+  }
+  .toggle button.active{ background:var(--teal); color:#fff; }
+
+  .stamp-side{
+    background:var(--ink-deep);
+    color:var(--paper);
+    padding:36px 34px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .stamp{
+    width:190px; height:190px; border-radius:50%;
+    border:3px solid var(--gold);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    position:relative;
+    transform:rotate(-4deg);
+    box-shadow:0 0 0 6px rgba(212,165,68,0.08);
+  }
+  .stamp::before{
+    content:'';
+    position:absolute; inset:8px; border-radius:50%; border:1px dashed var(--gold);
+    opacity:.6;
+  }
+  .stamp .lbl{ font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.25em; color:var(--gold-bright); text-transform:uppercase; }
+  .stamp .amt{ font-family:'DM Serif Display', serif; font-size:26px; margin-top:6px; text-align:center; padding:0 10px; }
+  .stamp .per{ font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-soft); margin-top:4px; }
+
+  .breakdown{ width:100%; margin-top:34px; }
+  .bd-row{ display:flex; justify-content:space-between; font-family:'JetBrains Mono', monospace; font-size:13px; margin-bottom:10px; color:var(--ink-soft); }
+  .bd-row b{ color:var(--paper); font-weight:700; }
+  .split-bar{ height:12px; border-radius:8px; overflow:hidden; display:flex; margin:14px 0 6px; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08); }
+  .split-bar .p{ background:var(--teal); }
+  .split-bar .i{ background:var(--gold); }
+  .legend{ display:flex; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-soft); }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+
+  footer{ text-align:center; margin-top:26px; color:var(--ink-soft); font-size:12px; font-family:'JetBrains Mono', monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Loan Ledger · Est. Repayment</div>
+    <h1>EMI Calculator</h1>
+    <p>Enter the loan terms — the ledger settles the monthly instalment instantly.</p>
+  </header>
+
+  <div class="board">
+    <div class="ledger-side">
+      <div class="field">
+        <label>Loan Amount <span class="val" id="loanAmtVal">₹5,00,000</span></label>
+        <input type="range" id="loanAmtSlider" min="10000" max="10000000" step="10000" value="500000">
+        <div class="numrow">
+          <input type="number" id="loanAmt" value="500000" min="1000" step="1000">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Annual Interest Rate <span class="val" id="rateVal">9.5%</span></label>
+        <input type="range" id="rateSlider" min="1" max="24" step="0.1" value="9.5">
+        <div class="numrow">
+          <input type="number" id="rate" value="9.5" min="0.1" step="0.1">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Tenure
+          <span class="toggle">
+            <button id="btnYears" class="active">Years</button>
+            <button id="btnMonths">Months</button>
+          </span>
+        </label>
+        <input type="range" id="tenureSlider" min="1" max="30" step="1" value="10">
+        <div class="numrow">
+          <input type="number" id="tenure" value="10" min="1" step="1">
+          <span id="tenureUnit" style="font-family:'JetBrains Mono',monospace;color:var(--teal);font-size:13px;">yrs</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stamp-side">
+      <div class="stamp">
+        <div class="lbl">Monthly EMI</div>
+        <div class="amt" id="emiOut">₹0</div>
+        <div class="per">per month</div>
+      </div>
+
+      <div class="breakdown">
+        <div class="bd-row"><span>Principal</span><b id="principalOut">₹0</b></div>
+        <div class="bd-row"><span>Total Interest</span><b id="interestOut">₹0</b></div>
+        <div class="bd-row"><span>Total Payment</span><b id="totalOut">₹0</b></div>
+        <div class="split-bar"><div class="p" id="splitP" style="width:50%"></div><div class="i" id="splitI" style="width:50%"></div></div>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--teal)"></span>Principal <b id="pctP">50%</b></span>
+          <span><span class="dot" style="background:var(--gold)"></span>Interest <b id="pctI">50%</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer>P × r × (1+r)ⁿ ⁄ ((1+r)ⁿ − 1)</footer>
+</div>
+
+<script>
+  const loanAmtSlider = document.getElementById('loanAmtSlider');
+  const loanAmt = document.getElementById('loanAmt');
+  const rateSlider = document.getElementById('rateSlider');
+  const rate = document.getElementById('rate');
+  const tenureSlider = document.getElementById('tenureSlider');
+  const tenure = document.getElementById('tenure');
+  const btnYears = document.getElementById('btnYears');
+  const btnMonths = document.getElementById('btnMonths');
+  const tenureUnit = document.getElementById('tenureUnit');
+
+  let unit = 'years';
+
+  function fmt(n){
+    return '₹' + Math.round(n).toLocaleString('en-IN');
+  }
+
+  function sync(a,b){ a.value = b.value; }
+
+  function setUnit(u){
+    unit = u;
+    if(u === 'years'){
+      btnYears.classList.add('active'); btnMonths.classList.remove('active');
+      tenureSlider.max = 30; tenureSlider.min = 1;
+      tenureUnit.textContent = 'yrs';
+      if(tenure.value > 30) tenure.value = 30;
+    } else {
+      btnMonths.classList.add('active'); btnYears.classList.remove('active');
+      tenureSlider.max = 360; tenureSlider.min = 1;
+      tenureUnit.textContent = 'mo';
+    }
+    tenureSlider.value = tenure.value;
+    calculate();
+  }
+
+  btnYears.addEventListener('click', () => setUnit('years'));
+  btnMonths.addEventListener('click', () => setUnit('months'));
+
+  function calculate(){
+    const P = parseFloat(loanAmt.value) || 0;
+    const annualRate = parseFloat(rate.value) || 0;
+    const tenureVal = parseFloat(tenure.value) || 0;
+    const n = unit === 'years' ? tenureVal * 12 : tenureVal;
+    const r = annualRate / 12 / 100;
+
+    let emi = 0;
+    if(r === 0){
+      emi = n > 0 ? P / n : 0;
+    } else {
+      const factor = Math.pow(1 + r, n);
+      emi = (P * r * factor) / (factor - 1);
+    }
+    if(!isFinite(emi) || isNaN(emi)) emi = 0;
+
+    const totalPayment = emi * n;
+    const totalInterest = totalPayment - P;
+
+    document.getElementById('emiOut').textContent = fmt(emi);
+    document.getElementById('principalOut').textContent = fmt(P);
+    document.getElementById('interestOut').textContent = fmt(totalInterest > 0 ? totalInterest : 0);
+    document.getElementById('totalOut').textContent = fmt(totalPayment > 0 ? totalPayment : P);
+
+    const pctP = totalPayment > 0 ? (P / totalPayment) * 100 : 100;
+    const pctI = 100 - pctP;
+    document.getElementById('splitP').style.width = pctP + '%';
+    document.getElementById('splitI').style.width = pctI + '%';
+    document.getElementById('pctP').textContent = Math.round(pctP) + '%';
+    document.getElementById('pctI').textContent = Math.round(pctI) + '%';
+
+    document.getElementById('loanAmtVal').textContent = fmt(P);
+    document.getElementById('rateVal').textContent = annualRate + '%';
+  }
+
+  loanAmtSlider.addEventListener('input', () => { sync(loanAmt, loanAmtSlider); calculate(); });
+  loanAmt.addEventListener('input', () => { sync(loanAmtSlider, loanAmt); calculate(); });
+  rateSlider.addEventListener('input', () => { sync(rate, rateSlider); calculate(); });
+  rate.addEventListener('input', () => { sync(rateSlider, rate); calculate(); });
+  tenureSlider.addEventListener('input', () => { sync(tenure, tenureSlider); calculate(); });
+  tenure.addEventListener('input', () => { sync(tenureSlider, tenure); calculate(); });
+
+  calculate();
+</script>
+</body>
+</html>
